@@ -1,0 +1,35 @@
+name: Prepare render toolchain
+on:
+  push:
+    paths: ['.github/workflows/toolchain.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Obtain pinned upstream rendering tools
+        run: |
+          mkdir -p vendor tools
+          curl --fail --location --retry 3 https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js -o vendor/three.module.js
+          curl --fail --location --retry 3 https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.core.js -o vendor/three.core.js
+          curl --fail --location --retry 3 https://cdn.jsdelivr.net/npm/three@0.180.0/LICENSE -o vendor/THREE-LICENSE.txt
+          curl --fail --location --retry 3 https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz -o tools/blender-4.3.2-linux-x64.tar.xz
+          sha256sum vendor/* tools/* > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: three-vendor
+          path: vendor/
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: blender-toolchain
+          path: tools/
+          compression-level: 0
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: upstream-checksums
+          path: SHA256SUMS
+          retention-days: 3
