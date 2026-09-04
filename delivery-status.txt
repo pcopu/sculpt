@@ -1,0 +1,31 @@
+UTC 2026-09-04T22:08:13.001576+00:00
+RUN 33924197612 Audit film delivery in_progress None 03d8829c01
+RUN 33923516694 Check source completed success 5e355799cc
+RUN 33923059248 Render final film completed skipped 34ebb2aea7
+RUN 33923032452 Bake coffee scene in_progress None 34ebb2aea7
+RUN 33922988490 Check source completed success 14cf59b44e
+RUN 33922966432 Check source completed success 1f735d4832
+RUN 33922773997 Check source completed success 4f0fc9e48b
+RUN 33922720109 Check source completed success 404609dd0e
+RUN 33922335592 Check source completed success f1b244ae31
+RUN 33922085847 Check source completed success 3eb14b2472
+RUN 33921994173 Check source completed success 8bc3a7c32a
+RUN 33921164459 Check source completed success 26b32688b6
+ARTIFACT 9955926533 source-snapshot 36140 run=33923516694
+ARTIFACT 9955739922 source-snapshot 35436 run=33922988490
+ARTIFACT 9955732131 source-snapshot 33785 run=33922966432
+ARTIFACT 9955664161 source-snapshot 33633 run=33922773997
+ARTIFACT 9955646081 source-snapshot 32531 run=33922720109
+ARTIFACT 9955503756 source-snapshot 31794 run=33922335592
+ARTIFACT 9955408862 source-snapshot 31684 run=33922085847
+ARTIFACT 9955374937 source-snapshot 30578 run=33921994173
+ARTIFACT 9955063022 source-snapshot 29272 run=33921164459
+ARTIFACT 9954947746 source-snapshot 29220 run=33920855746
+ARTIFACT 9954935661 source-snapshot 28131 run=33920823466
+ARTIFACT 9954572091 source-snapshot 25857 run=33919825402
+ARTIFACT 9954543308 source-snapshot 25502 run=33919763037
+ARTIFACT 9953684416 upstream-checksums 390 run=33917438504
+ARTIFACT 9953684017 blender-toolchain 368852530 run=33917438504
+ARTIFACT 9953682176 three-vendor 397506 run=33917438504
+WORKFLOWS .github/workflows/prepare.yml, .github/workflows/check.yml, .github/workflows/render.yml, .github/workflows/delivery-audit.yml, .github/workflows/toolchain.yml
+TOOLS tools/assemble.py, tools/render_shard.py, tools/refine_simulation.py, tools/bake_checked.py, tools/capture_browser.py, tools/serve.mjs, tools/stage_spill.py, tools/finalize_materials.py, tools/bake_wetmaps.py, tools/validate_cache.py, tools/validate_physics.py, tools/build_scene.py
