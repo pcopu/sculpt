@@ -1,0 +1,1 @@
+{"name":"sculpt-the-last-sip","version":"1.0.0","private":true,"type":"module","description":"Original 22-second coffee spill film and shared Three.js liquid scene","scripts":{"start":"node tools/serve.mjs","dev":"node tools/serve.mjs","test":"node --test tests/*.test.mjs"},"engines":{"node":">=20"}}

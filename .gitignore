@@ -1,0 +1,6 @@
+render/
+__pycache__/
+*.blend1
+node_modules/
+*.log
+render-cache.tgz
