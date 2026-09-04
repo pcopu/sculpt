@@ -8,7 +8,7 @@ from PIL import Image,ImageFilter
 
 def main():
     root=Path(__file__).resolve().parents[1]
-    p=argparse.ArgumentParser();p.add_argument('--cache',type=Path,default=root/'render/cache');p.add_argument('--out',type=Path,default=root/'public/assets/wetness');p.add_argument('--origin',type=float,nargs=3,default=[-.024,-1.12,-.03]);p.add_argument('--size',type=float,nargs=2,default=[.94,.96]);p.add_argument('--frames',type=int,default=288);p.add_argument('--resolution',type=int,default=512);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--cache',type=Path,default=root/'render/cache');p.add_argument('--out',type=Path,default=root/'public/assets/wetness');p.add_argument('--origin',type=float,nargs=3,default=[-.024,-1.12,-.03]);p.add_argument('--size',type=float,nargs=2,default=[1.20,.96]);p.add_argument('--frames',type=int,default=288);p.add_argument('--resolution',type=int,default=512);a=p.parse_args()
     a.out.mkdir(parents=True,exist_ok=True);n=a.resolution;origin=np.array(a.origin);extent=np.array(a.size)
     floor=np.zeros((n,n),dtype=np.uint8);table=floor.copy()
     for f in range(1,a.frames+1):

@@ -14,7 +14,7 @@ rng=random.Random(7342)
 def argparser():
     p=argparse.ArgumentParser()
     p.add_argument('--mode',choices=['build','bake','preview','render','export'],default='build')
-    p.add_argument('--resolution',type=int,default=160)
+    p.add_argument('--resolution',type=int,default=200)
     p.add_argument('--start',type=int,default=0)
     p.add_argument('--end',type=int,default=528)
     p.add_argument('--samples',type=int,default=40)
@@ -179,7 +179,7 @@ def make_scene(resolution):
             v=Vector((1.5,1.4,z-.1)).lerp(Vector(end),.2+k*.09)
             for side in [-1,1]:
                 o=ball('Tree leaf',v+Vector((math.cos(angle+side)*.025,math.sin(angle+side)*.025,.012)),(.045,.009,.017),leaves);o.rotation_euler=(rng.random(),rng.random(),angle+side*.7)
-    root=bpy.data.objects.new('Cup pivot',None);bpy.context.collection.objects.link(root);root.location=(.275,-.347,TOP+.001)
+    root=bpy.data.objects.new('Cup pivot',None);bpy.context.collection.objects.link(root);root.location=(.275+math.sin(math.pi/3)*.035,-.312-math.cos(math.pi/3)*.035,TOP+.001)
     profile=[(0,0),(.032,0),(.037,.003),(.040,.016),(.046,.090),(.0468,.104),(.0456,.108),(.0416,.108),(.0402,.103),(.039,.091),(.034,.020),(.032,.014),(0,.014)]
     cup=lathe('Ivory coffee cup',profile,cream,128);cup.parent=root;cup.location=(0,.035,0)
     bpy.context.view_layer.objects.active=cup;cup.select_set(True);bpy.ops.object.mode_set(mode='EDIT');bpy.ops.mesh.select_all(action='SELECT');bpy.ops.mesh.remove_doubles(threshold=.00001);bpy.ops.mesh.normals_make_consistent(inside=False);bpy.ops.object.mode_set(mode='OBJECT');cup.select_set(False);effector(cup,.6).effector_settings.subframes=2
@@ -189,14 +189,15 @@ def make_scene(resolution):
     handle=curve('Porcelain loop handle',pts,.007,cream);handle.parent=root
     foot=lathe('Unglazed cup foot',[(.0305,.0005),(.032,.001),(.033,.003),(.032,.005),(.0305,.005)],clay,96);foot.parent=root;foot.location=(0,.035,0)
     for f,ang in [(1,0),(22,0),(34,.075),(48,.32),(64,.83),(80,1.42),(88,1.57),(98,1.50),(112,1.535),(130,1.525),(288,1.525)]:
-        root.rotation_euler=(ang,0,0);root.location.z=TOP+.001+.012*math.sin(ang);root.keyframe_insert(data_path='rotation_euler',frame=f);root.keyframe_insert(data_path='location',frame=f)
+        root.rotation_euler=(ang,0,math.pi/3);root.location.z=TOP+.001+.012*math.sin(ang);root.keyframe_insert(data_path='rotation_euler',frame=f);root.keyframe_insert(data_path='location',frame=f)
     for fc in root.animation_data.action.fcurves:
         for kp in fc.keyframe_points:kp.interpolation='BEZIER';kp.handle_left_type='AUTO_CLAMPED';kp.handle_right_type='AUTO_CLAMPED'
     # Fitted initial volume; no artificial stream or expanding puddle.
-    coffee=material('Coffee / dark amber dielectric',(.033,.009,.0028),.16,coat=.22);cb=coffee.node_tree.nodes['Principled BSDF'];cb.inputs['IOR'].default_value=1.333;cb.inputs['Transmission Weight'].default_value=.18;cb.inputs['Coat Roughness'].default_value=.08
-    flow=cylinder('Initial coffee volume',(.275,-.312,TOP+.028),(.275,-.312,TOP+.092),.027,None,96,r2=.036);bpy.context.view_layer.objects.active=flow
+    coffee=material('Coffee / dark amber dielectric',(1,1,1),.075);cb=coffee.node_tree.nodes['Principled BSDF'];cb.inputs['IOR'].default_value=1.333;cb.inputs['Transmission Weight'].default_value=1.0
+    absorption=coffee.node_tree.nodes.new('ShaderNodeVolumeAbsorption');absorption.name='Coffee absorption';absorption.inputs['Color'].default_value=(.65,.22,.07,1);absorption.inputs['Density'].default_value=200;coffee.node_tree.links.new(absorption.outputs['Volume'],coffee.node_tree.nodes['Material Output'].inputs['Volume'])
+    flow=cylinder('Initial coffee volume',(.275,-.312,TOP+.023),(.275,-.312,TOP+.100),.028,None,96,r2=.036);bpy.context.view_layer.objects.active=flow
     fl=flow.modifiers.new('Initial volume','FLUID');fl.fluid_type='FLOW';fl.flow_settings.flow_type='LIQUID';fl.flow_settings.flow_behavior='GEOMETRY';fl.flow_settings.surface_distance=0.0;flow.hide_render=True;flow.display_type='WIRE'
-    domain=box('COFFEE / Mantaflow FLIP',(.29,-.64,.365),(.94,.96,.79),coffee);bpy.context.view_layer.objects.active=domain
+    domain=box('COFFEE / Mantaflow FLIP',(.576,-.64,.365),(1.20,.96,.79),coffee);bpy.context.view_layer.objects.active=domain
     dm=domain.modifiers.new('Liquid solver','FLUID');dm.fluid_type='DOMAIN';ds=dm.domain_settings;ds.domain_type='LIQUID';ds.resolution_max=resolution;ds.cache_type='MODULAR'
     ds.cache_frame_start=1;ds.cache_frame_end=SIM_END;ds.cache_directory=str(OUT/'cache');ds.cache_data_format='UNI';ds.cache_mesh_format='BOBJECT';ds.use_mesh=True;ds.mesh_scale=2;ds.mesh_particle_radius=1.7;ds.mesh_smoothen_pos=2;ds.mesh_smoothen_neg=2
     ds.time_scale=.25;ds.timesteps_min=2;ds.timesteps_max=8;ds.cfl_condition=2.0;ds.flip_ratio=.94;ds.particle_randomness=.1;ds.use_fractions=False;ds.fractions_threshold=.05;ds.use_collision_border_bottom=True;sc.gravity=(0,0,-9.81)
@@ -209,7 +210,7 @@ def make_scene(resolution):
     sc.frame_set(1);set_camera(0);bpy.ops.file.pack_all();bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'coffee.blend'));print('SCENE_BUILT',len(sc.objects),flush=True)
 
 def sim_frame(f):return max(1,min(SIM_END,f-95))
-CAMERA_KEYS=[(0,(1.43,-1.65,1.16),(.05,-.13,.51),49),(94,(.72,-.94,.84),(.27,-.32,.588),59),(174,(.63,-.93,.78),(.28,-.37,.568),60),(240,(.62,-1.00,.61),(.29,-.48,.385),55),(316,(.67,-1.14,.36),(.28,-.68,.074),54),(384,(.79,-1.22,.40),(.28,-.68,.083),52),(527,(1.42,-1.84,1.13),(.12,-.26,.35),47)]
+CAMERA_KEYS=[[0,[1.43,-1.65,1.16],[0.05,-0.13,0.51],49],[94,[0.72,-0.94,0.84],[0.275,-0.312,0.6],59],[164,[0.79,-0.91,0.78],[0.355,-0.365,0.575],58],[200,[0.98,-1.04,0.83],[0.56,-0.41,0.535],54],[230,[1.12,-1.15,0.56],[0.78,-0.48,0.3],52],[260,[1.18,-1.29,0.34],[0.88,-0.55,0.055],52],[340,[1.24,-1.33,0.39],[0.85,-0.61,0.06],54],[384,[1.26,-1.36,0.44],[0.85,-0.62,0.083],52],[527,[1.85,-1.9,1.22],[0.35,-0.27,0.35],43]]
 def catmull(p0,p1,p2,p3,t):return .5*((2*p1)+(-p0+p2)*t+(2*p0-5*p1+4*p2-p3)*t*t+(-p0+3*p1-3*p2+p3)*t*t*t)
 def camera_values(f):
     k=0

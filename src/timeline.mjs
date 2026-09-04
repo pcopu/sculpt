@@ -1,6 +1,6 @@
 export const FPS=24,FRAMES=528,DURATION=22,SIM_FRAMES=288;
 export const simFrame=f=>Math.max(1,Math.min(SIM_FRAMES,Math.floor(f)-95));
-export const keys=[[0,[1.43,-1.65,1.16],[.05,-.13,.51],49],[94,[.72,-.94,.84],[.27,-.32,.588],59],[174,[.63,-.93,.78],[.28,-.37,.568],60],[240,[.62,-1,.61],[.29,-.48,.385],55],[316,[.67,-1.14,.36],[.28,-.68,.074],54],[384,[.79,-1.22,.40],[.28,-.68,.083],52],[527,[1.42,-1.84,1.13],[.12,-.26,.35],47]];
+export const keys=[[0,[1.43,-1.65,1.16],[0.05,-0.13,0.51],49],[94,[0.72,-0.94,0.84],[0.275,-0.312,0.6],59],[164,[0.79,-0.91,0.78],[0.355,-0.365,0.575],58],[200,[0.98,-1.04,0.83],[0.56,-0.41,0.535],54],[230,[1.12,-1.15,0.56],[0.78,-0.48,0.3],52],[260,[1.18,-1.29,0.34],[0.88,-0.55,0.055],52],[340,[1.24,-1.33,0.39],[0.85,-0.61,0.06],54],[384,[1.26,-1.36,0.44],[0.85,-0.62,0.083],52],[527,[1.85,-1.9,1.22],[0.35,-0.27,0.35],43]];
 const cat=(a,b,c,d,t)=>.5*(2*b+(-a+c)*t+(2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t);
 export function cameraAt(frame){const f=Math.max(0,Math.min(FRAMES-1,frame));let k=0;while(k<keys.length-2&&f>keys[k+1][0])k++;const t=(f-keys[k][0])/(keys[k+1][0]-keys[k][0]);const p=[keys[Math.max(0,k-1)],keys[k],keys[k+1],keys[Math.min(keys.length-1,k+2)]];return {position:[0,1,2].map(i=>cat(...p.map(x=>x[1][i]),t)),target:[0,1,2].map(i=>cat(...p.map(x=>x[2][i]),t)),lens:cat(...p.map(x=>x[3]),t)};}
 // Fallback only. Playback uses exact evaluated Blender transforms from cup.json.

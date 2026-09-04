@@ -27,8 +27,8 @@ async function initialize(){
   return mat;
  });
  await Promise.all(loads);
- cup=new THREE.Group();cup.position.set(.275,-.347,.546);stage.add(cup);
- const invPivot=new THREE.Matrix4().makeTranslation(-.275,.347,-.546);
+ cup=new THREE.Group();cup.position.fromArray(cupData[0].position);cup.rotation.set(...cupData[0].rotation);cup.updateMatrix();stage.add(cup);
+ const invPivot=cup.matrix.clone().invert();
  for(const obj of data.objects){
   const g=new THREE.BufferGeometry(),n=obj.vertices;
   g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(raw,obj.offset,n*3),3));g.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(raw,obj.offset+n*12,n*3),3));g.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(raw,obj.offset+n*24,n*2),2));
@@ -40,7 +40,7 @@ async function initialize(){
  Object.assign(sun.shadow.camera,{left:-2,right:2,top:2,bottom:-2,near:.1,far:12});sun.shadow.mapSize.set(2048,2048);sun.shadow.normalBias=.003;sun.shadow.bias=-.0002;scene.add(sun,sun.target);
  const fill=new THREE.DirectionalLight(0xbcd4ff,.9);fill.position.set(2,3,2);scene.add(fill);
  const practical=new THREE.PointLight(0xffb76b,8,4,2);practical.position.copy(xyz([-1.53,1.22,1.38]));scene.add(practical);
- const reflection=new THREE.WebGLCubeRenderTarget(128,{type:THREE.HalfFloatType});const capture=new THREE.CubeCamera(.03,15,reflection);capture.position.copy(xyz([.275,-.32,.65]));scene.add(capture);cup.visible=false;capture.update(renderer,scene);cup.visible=true;scene.environment=reflection.texture;
+ const reflection=new THREE.WebGLCubeRenderTarget(128,{type:THREE.HalfFloatType});const capture=new THREE.CubeCamera(.03,15,reflection);capture.position.copy(xyz([.275,-.312,.65]));scene.add(capture);cup.visible=false;capture.update(renderer,scene);cup.visible=true;scene.environment=reflection.texture;
  liquid=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshPhysicalMaterial({color:0x321207,roughness:.13,metalness:0,clearcoat:.8,clearcoatRoughness:.08,ior:1.333,transmission:.17,thickness:.02,attenuationColor:new THREE.Color('#843c12'),attenuationDistance:.06}));
  rowMatrix(meta.matrix).decompose(liquid.position,liquid.quaternion,liquid.scale);liquid.castShadow=true;liquid.receiveShadow=true;stage.add(liquid);
  initialized=true;

@@ -2,7 +2,7 @@
 from pathlib import Path
 import gzip,struct,math,json
 ROOT=Path(__file__).resolve().parents[1]
-DX=.006;ORIGIN=(-.18,-1.12,-.03);FRAMES=288
+DX=.006;ORIGIN=(-.024,-1.12,-.03);FRAMES=288
 history=[]
 for frame in range(1,FRAMES+1):
     p=ROOT/'render/cache/data'/f'pp_{frame:04d}.uni'
@@ -18,7 +18,7 @@ for frame in range(1,FRAMES+1):
         active+=1
         if .540<z<.555 and y>-.445 and -.70<x<.70:table+=1
         if -.01<z<.035:floor+=1
-        if frame in (1,10,22) and (math.hypot(x-.275,y+.287)>.05 or z<.558):leaked+=1
+        if frame in (1,10,22) and (math.hypot(x-.275,y+.312)>.05 or z<.558):leaked+=1
     assert active>1000,f'Liquid lost at frame {frame}'
     if frame in (1,10,22):assert leaked/active<.005,f'Upright cup leaked at {frame}: {leaked}/{active}'
     history.append({'frame':frame,'activeParticles':active,'tableParticles':table,'floorParticles':floor,'uprightEscaped':leaked})

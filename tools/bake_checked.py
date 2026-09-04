@@ -2,7 +2,7 @@
 import gzip,struct,math,subprocess,time,sys,os
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-def upright_check(directory,dx=.006,origin=(-.18,-1.12,-.03)):
+def upright_check(directory,dx=.006,origin=(-.024,-1.12,-.03)):
     reports=[]
     for frame in [1,10,22]:
         raw=gzip.decompress((directory/f'pp_{frame:04d}.uni').read_bytes())
@@ -20,7 +20,7 @@ def upright_check(directory,dx=.006,origin=(-.18,-1.12,-.03)):
     return reports
 if __name__=='__main__':
     blender=os.environ.get('BLENDER','blender');threads=os.environ.get('RENDER_THREADS','4')
-    process=subprocess.Popen([blender,'-b','-t',threads,'--python',str(ROOT/'tools'/'build_scene.py'),'--','--mode','bake'])
+    process=subprocess.Popen([blender,'-b','-t',threads,'--python-exit-code','1','--python',str(ROOT/'tools'/'build_scene.py'),'--','--mode','bake'])
     checked=False;directory=ROOT/'render'/'cache'/'data'
     try:
         while process.poll() is None:

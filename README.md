@@ -27,7 +27,7 @@ Open the printed local address. Watch or download the film, or switch to the int
 Requires Blender 4.3.2, Python with NumPy and Pillow, and FFmpeg.
 
 ```sh
-blender -b -t 4 --python tools/build_scene.py -- --mode build --resolution 160
+blender -b -t 4 --python tools/build_scene.py -- --mode build --resolution 200
 blender -b -t 4 --python tools/build_scene.py -- --mode bake
 blender -b -t 4 --python tools/build_scene.py -- --mode export
 python tools/validate_cache.py
