@@ -1,0 +1,24 @@
+name: Check source
+on:
+  push:
+    paths: ['src/**','tools/**','tests/**','index.html','package.json','.github/workflows/check.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - run: python -m compileall -q tools
+      - name: Archive canonical source
+        run: git archive --format=zip HEAD -o sculpt-source.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-snapshot
+          path: sculpt-source.zip
+          retention-days: 3
