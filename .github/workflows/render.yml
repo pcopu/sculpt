@@ -6,18 +6,34 @@ on:
   workflow_dispatch:
     inputs:
       cache_run_id:
-        description: Successful Bake coffee scene run containing render-cache
+        description: Successful Bake coffee scene run containing a validated render-cache
         required: true
-        default: '33919270519'
 permissions:
   contents: write
   actions: read
 concurrency:
   group: final-coffee-film
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
-  frames:
+  validate:
     if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/download-artifact@v4
+        with:
+          name: render-cache
+          run-id: ${{ github.event.workflow_run.id || inputs.cache_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          tar -xzf render-cache.tgz public/assets
+          npm test
+          python tools/validate_cache.py
+  frames:
+    needs: validate
     runs-on: ubuntu-24.04
     timeout-minutes: 150
     strategy:
@@ -46,11 +62,13 @@ jobs:
         run: |
           START=$((528 * ${{ matrix.shard }} / 40))
           END=$((528 * (${{ matrix.shard }} + 1) / 40))
-          /tmp/blender-4.3.2-linux-x64/blender -b -t 4 --python tools/render_shard.py -- --mode render --start "$START" --end "$END" --width 1920 --samples 40
+          /tmp/blender-4.3.2-linux-x64/blender -b -t 4 --python-exit-code 1 --python tools/render_shard.py -- --mode render --start "$START" --end "$END" --width 1920 --samples 40
       - uses: actions/upload-artifact@v4
         with:
           name: frames-${{ matrix.shard }}
           path: render/frames/*.png
+          if-no-files-found: error
+          overwrite: true
           compression-level: 0
           retention-days: 3
   assemble:
@@ -90,6 +108,8 @@ jobs:
         with:
           name: final-film
           path: public/film/
+          if-no-files-found: error
+          overwrite: true
           compression-level: 0
           retention-days: 14
       - uses: actions/download-artifact@v4
@@ -108,5 +128,7 @@ jobs:
         with:
           name: editable-handoff
           path: sculpt-editable.zip
+          if-no-files-found: error
+          overwrite: true
           compression-level: 0
           retention-days: 14
