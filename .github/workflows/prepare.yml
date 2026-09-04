@@ -1,0 +1,75 @@
+name: Bake coffee scene
+on:
+  push:
+    paths: ['.github/workflows/prepare.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: coffee-bake
+  cancel-in-progress: false
+jobs:
+  bake:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      RENDER_THREADS: '4'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Blender
+        run: |
+          curl --fail --location --retry 3 https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz -o /tmp/blender.tar.xz
+          tar -xf /tmp/blender.tar.xz -C /tmp
+          echo '/tmp/blender-4.3.2-linux-x64' >> "$GITHUB_PATH"
+          mkdir -p public/vendor
+          curl --fail --location --retry 3 https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js -o public/vendor/three.module.js
+          curl --fail --location --retry 3 https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.core.js -o public/vendor/three.core.js
+          curl --fail --location --retry 3 https://cdn.jsdelivr.net/npm/three@0.180.0/LICENSE -o public/vendor/THREE-LICENSE.txt
+      - name: Build original scene
+        run: blender -b -t 4 --python tools/build_scene.py -- --mode build --resolution 160
+      - name: Simulate and mesh the liquid
+        run: blender -b -t 4 --python tools/build_scene.py -- --mode bake
+      - name: Export Three.js geometry and liquid frames
+        run: blender -b -t 4 --python tools/build_scene.py -- --mode export
+      - name: Verify liquid reaches the floor
+        run: |
+          python - <<'PY'
+          import json,gzip,struct
+          from pathlib import Path
+          a=Path('public/assets');data=json.loads((a/'liquid.json').read_text())
+          assert len(data['frames'])==288
+          for f in data['frames']:
+              b=gzip.decompress((a/'liquid'/f"{f['frame']:03d}.bin.gz").read_bytes())
+              n,t=struct.unpack('<II',b[:8]);assert len(b)==8+24*n+12*t
+              assert n>50 and t>50,f
+          assert max(f['floorVertices'] for f in data['frames'])>50,'No floor impact in simulation'
+          print('288 valid liquid meshes; floor impact verified')
+          PY
+      - name: Package the baked scene
+        run: |
+          tar -czf render-cache.tgz render/coffee.blend render/cache public/assets
+          du -sh render-cache.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: render-cache
+          path: render-cache.tgz
+          compression-level: 0
+          retention-days: 14
+      - name: Commit generated Three.js assets
+        run: |
+          rm -rf .build
+          git config user.name 'sculpt-render-bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/assets public/vendor
+          git add -u .build || true
+          git commit -m 'Bake actual FLIP coffee and publish shared Three.js assets' || true
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Render inspection frames
+        run: blender -b -t 4 --python tools/build_scene.py -- --mode preview --width 960 --samples 16
+      - uses: actions/upload-artifact@v4
+        with:
+          name: inspection-frames
+          path: render/preview
+          retention-days: 14
