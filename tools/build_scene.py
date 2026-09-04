@@ -182,7 +182,7 @@ def make_scene(resolution):
     root=bpy.data.objects.new('Cup pivot',None);bpy.context.collection.objects.link(root);root.location=(.275,-.347,TOP+.001)
     profile=[(0,0),(.032,0),(.037,.003),(.040,.016),(.046,.090),(.0468,.104),(.0456,.108),(.0416,.108),(.0402,.103),(.039,.091),(.034,.020),(.032,.014),(0,.014)]
     cup=lathe('Ivory coffee cup',profile,cream,128);cup.parent=root;cup.location=(0,.035,0)
-    bpy.context.view_layer.objects.active=cup;cup.select_set(True);bpy.ops.object.mode_set(mode='EDIT');bpy.ops.mesh.select_all(action='SELECT');bpy.ops.mesh.remove_doubles(threshold=.00001);bpy.ops.mesh.normals_make_consistent(inside=False);bpy.ops.object.mode_set(mode='OBJECT');cup.select_set(False);effector(cup,.65)
+    bpy.context.view_layer.objects.active=cup;cup.select_set(True);bpy.ops.object.mode_set(mode='EDIT');bpy.ops.mesh.select_all(action='SELECT');bpy.ops.mesh.remove_doubles(threshold=.00001);bpy.ops.mesh.normals_make_consistent(inside=False);bpy.ops.object.mode_set(mode='OBJECT');cup.select_set(False);effector(cup,.6).effector_settings.subframes=2
     pts=[]
     for j in range(25):
         a=-math.pi*.5+j/24*math.pi;pts.append((.040+.030*math.cos(a),.035,.060+.032*math.sin(a)))
@@ -192,14 +192,14 @@ def make_scene(resolution):
         root.rotation_euler=(ang,0,0);root.location.z=TOP+.001+.012*math.sin(ang);root.keyframe_insert(data_path='rotation_euler',frame=f);root.keyframe_insert(data_path='location',frame=f)
     for fc in root.animation_data.action.fcurves:
         for kp in fc.keyframe_points:kp.interpolation='BEZIER';kp.handle_left_type='AUTO_CLAMPED';kp.handle_right_type='AUTO_CLAMPED'
-    # Approximately 293 mL initial geometry; no artificial stream or expanding puddle.
+    # Fitted initial volume; no artificial stream or expanding puddle.
     coffee=material('Coffee / dark amber dielectric',(.033,.009,.0028),.16,coat=.22);cb=coffee.node_tree.nodes['Principled BSDF'];cb.inputs['IOR'].default_value=1.333;cb.inputs['Transmission Weight'].default_value=.18;cb.inputs['Coat Roughness'].default_value=.08
-    flow=cylinder('Initial coffee volume',(.275,-.312,TOP+.017),(.275,-.312,TOP+.087),.0365,None,96);bpy.context.view_layer.objects.active=flow
-    fl=flow.modifiers.new('Initial volume','FLUID');fl.fluid_type='FLOW';fl.flow_settings.flow_type='LIQUID';fl.flow_settings.flow_behavior='GEOMETRY';fl.flow_settings.surface_distance=1.0;flow.hide_render=True;flow.display_type='WIRE'
+    flow=cylinder('Initial coffee volume',(.275,-.312,TOP+.028),(.275,-.312,TOP+.092),.027,None,96,r2=.036);bpy.context.view_layer.objects.active=flow
+    fl=flow.modifiers.new('Initial volume','FLUID');fl.fluid_type='FLOW';fl.flow_settings.flow_type='LIQUID';fl.flow_settings.flow_behavior='GEOMETRY';fl.flow_settings.surface_distance=0.0;flow.hide_render=True;flow.display_type='WIRE'
     domain=box('COFFEE / Mantaflow FLIP',(.29,-.64,.365),(.94,.96,.79),coffee);bpy.context.view_layer.objects.active=domain
     dm=domain.modifiers.new('Liquid solver','FLUID');dm.fluid_type='DOMAIN';ds=dm.domain_settings;ds.domain_type='LIQUID';ds.resolution_max=resolution;ds.cache_type='MODULAR'
     ds.cache_frame_start=1;ds.cache_frame_end=SIM_END;ds.cache_directory=str(OUT/'cache');ds.cache_data_format='UNI';ds.cache_mesh_format='BOBJECT';ds.use_mesh=True;ds.mesh_scale=2;ds.mesh_particle_radius=1.7;ds.mesh_smoothen_pos=2;ds.mesh_smoothen_neg=2
-    ds.time_scale=.25;ds.timesteps_min=2;ds.timesteps_max=6;ds.flip_ratio=.94;ds.particle_randomness=.1;ds.use_fractions=True;ds.fractions_threshold=.05;ds.use_collision_border_bottom=True;sc.gravity=(0,0,-9.81)
+    ds.time_scale=.25;ds.timesteps_min=2;ds.timesteps_max=8;ds.cfl_condition=2.0;ds.flip_ratio=.94;ds.particle_randomness=.1;ds.use_fractions=False;ds.fractions_threshold=.05;ds.use_collision_border_bottom=True;sc.gravity=(0,0,-9.81)
     domain['simulation']='Mantaflow FLIP; initial volume; moving cup collider; gravity; floor and table collisions'
     area('Window daylight',(-2.20,-.55,1.95),(.2,-.3,.4),420,(1,.84,.63),2.25,1.65);area('Large cool bounce',(1.3,-.5,2.4),(.1,-.2,.4),95,(.72,.83,1),2.0);area('Coffee rim strip',(.35,.25,1.7),(.27,-.36,.5),48,(1,.83,.60),.62,.14)
     sun=bpy.data.lights.new('Late afternoon sun','SUN');sun.energy=1.35;sun.angle=.075;sun.color=(1,.79,.52);o=bpy.data.objects.new('Late afternoon sun',sun);bpy.context.collection.objects.link(o);o.rotation_euler=(math.radians(29),math.radians(-34),math.radians(-65))
