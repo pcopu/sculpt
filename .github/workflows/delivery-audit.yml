@@ -1,0 +1,46 @@
+name: Audit film delivery
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/delivery-audit.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record render and artifact state
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request, pathlib, datetime
+          base='https://api.github.com/repos/'+os.environ['REPOSITORY']
+          def get(path):
+              req=urllib.request.Request(base+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+              return json.load(urllib.request.urlopen(req))
+          lines=['UTC '+datetime.datetime.now(datetime.timezone.utc).isoformat()]
+          for run in get('/actions/runs?per_page=12')['workflow_runs']:
+              lines.append(f"RUN {run['id']} {run['name']} {run['status']} {run['conclusion']} {run['head_sha'][:10]}")
+          for art in get('/actions/artifacts?per_page=50')['artifacts']:
+              if not art['expired']:
+                  lines.append(f"ARTIFACT {art['id']} {art['name']} {art['size_in_bytes']} run={art.get('workflow_run',{}).get('id')}")
+          lines.append('WORKFLOWS '+', '.join(str(p) for p in pathlib.Path('.github/workflows').glob('*')))
+          lines.append('TOOLS '+', '.join(str(p) for p in pathlib.Path('tools').glob('*')))
+          for p in pathlib.Path('.').rglob('*.mp4'):
+              lines.append('MP4 '+str(p)+' '+str(p.stat().st_size))
+          pathlib.Path('delivery-status.txt').write_text('\n'.join(lines)+'\n')
+          print('\n'.join(lines))
+          PY
+      - name: Commit audit report
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add delivery-status.txt
+          git diff --cached --quiet || git commit -m 'Record persistent film render state'
+          git pull --rebase origin main
+          git push origin HEAD:main
