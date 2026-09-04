@@ -19,8 +19,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-      - name: Install pinned Blender
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned renderer and image tools
         run: |
+          pip install numpy pillow
           curl --fail --location --retry 3 https://download.blender.org/release/Blender4.3/blender-4.3.2-linux-x64.tar.xz -o /tmp/blender.tar.xz
           tar -xf /tmp/blender.tar.xz -C /tmp
           echo '/tmp/blender-4.3.2-linux-x64' >> "$GITHUB_PATH"
@@ -28,24 +32,32 @@ jobs:
           curl --fail --location --retry 3 https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js -o public/vendor/three.module.js
           curl --fail --location --retry 3 https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.core.js -o public/vendor/three.core.js
           curl --fail --location --retry 3 https://cdn.jsdelivr.net/npm/three@0.180.0/LICENSE -o public/vendor/THREE-LICENSE.txt
-      - name: Apply tested liquid containment settings
+      - name: Apply physically tested scene revision
         run: |
-          python tools/refine_simulation.py
+          python tools/stage_spill.py
+          python -m compileall -q tools
+          npm test
           git config user.name 'sculpt-render-bot'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add tools/build_scene.py
-          git commit -m 'Apply stable cup collisions and fitted liquid volume' || true
+          git add tools src README.md
+          git commit -m 'Lock tested spill staging, 6 mm solver grid and synchronized camera' || true
           git pull --rebase origin main
           git push origin HEAD:main
       - name: Build original scene
-        run: blender -b -t 4 --python tools/build_scene.py -- --mode build --resolution 160
-      - name: Simulate liquid with early containment regression checks
+        run: blender -b -t 4 --python-exit-code 1 --python tools/build_scene.py -- --mode build --resolution 200
+      - name: Bake liquid with upright containment regression checks
         run: python tools/bake_checked.py
-      - name: Export Three.js geometry and liquid frames
-        run: blender -b -t 4 --python tools/build_scene.py -- --mode export
-      - name: Verify all meshes and physical floor impact
+      - name: Validate physical events and derive wet wood masks
+        run: |
+          python tools/validate_physics.py
+          python tools/bake_wetmaps.py
+      - name: Finalize editable material graphs
+        run: blender -b -t 4 --python-exit-code 1 --python tools/finalize_materials.py
+      - name: Export shared Three.js geometry and liquid frames
+        run: blender -b -t 4 --python-exit-code 1 --python tools/build_scene.py -- --mode export
+      - name: Verify complete cache
         run: python tools/validate_cache.py
-      - name: Package the baked scene
+      - name: Package validated simulation and scene
         run: |
           tar -czf render-cache.tgz render/coffee.blend render/cache public/assets
           du -sh render-cache.tgz
@@ -53,18 +65,20 @@ jobs:
         with:
           name: render-cache
           path: render-cache.tgz
+          if-no-files-found: error
           compression-level: 0
           retention-days: 14
-      - name: Commit generated Three.js assets
+      - name: Commit original scene assets and physical validation
         run: |
           git add public/assets public/vendor
-          git commit -m 'Publish contained FLIP coffee simulation and shared Three.js assets'
+          git commit -m 'Publish validated coffee simulation, original scene and contact wetness'
           git pull --rebase origin main
           git push origin HEAD:main
       - name: Render inspection frames
-        run: blender -b -t 4 --python tools/render_shard.py -- --mode preview --width 960 --samples 16
+        run: blender -b -t 4 --python-exit-code 1 --python tools/render_shard.py -- --mode preview --width 960 --samples 20
       - uses: actions/upload-artifact@v4
         with:
           name: inspection-frames
           path: render/preview
+          if-no-files-found: error
           retention-days: 14
