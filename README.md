@@ -1,5 +1,7 @@
 # The Last Sip
 
+> **Already reproduced the 854-particle blocker?** Use [FLOOR_IMPACT_RECOVERY.md](FLOOR_IMPACT_RECOVERY.md), not another identical baseline bake. The recovery helper creates an isolated wider-domain experiment, preserves the 6 mm cell size and original floor threshold, and leaves your existing cache untouched. The candidate still requires a complete rebake and physical/visual acceptance.
+>
 > **GPU workstation handoff:** Start with [GPU_RENDER_HANDOFF.md](GPU_RENDER_HANDOFF.md). It contains the Windows/PowerShell and Linux/Bash setup, explicit GPU selection, cache recovery/rebuild, diagnosis of the known physics failure, preview and final rendering, resumable frame ranges, and MP4 verification.
 >
 > **Status as of the September 4, 2026 handoff:** No verified finished MP4 has been delivered. The inspected bake completed its data/mesh stages but failed the floor-impact acceptance check (`854`, with a required peak above `1000`). Export and final rendering did not complete. The deliverables below are targets, not a claim that generated files exist. The handoff documents the failure rather than bypassing it.
@@ -28,9 +30,9 @@ Open the printed local address. After delivery files exist, watch the film or sw
 
 ## Rebuild and render on a GPU
 
-Follow [GPU_RENDER_HANDOFF.md](GPU_RENDER_HANDOFF.md) in order. Its commands supersede the previous short rebuild recipe, which omitted the physics-report and wet-material stages and left Cycles configured for CPU rendering.
+For first-time setup, follow [GPU_RENDER_HANDOFF.md](GPU_RENDER_HANDOFF.md). After reproducing the known floor-impact failure, use [FLOOR_IMPACT_RECOVERY.md](FLOOR_IMPACT_RECOVERY.md) rather than rerunning the unchanged baseline. These documents supersede the previous short rebuild recipe, which omitted the physics-report and wet-material stages and left Cycles configured for CPU rendering.
 
-The new [tools/render_gpu.py](tools/render_gpu.py) wrapper applies GPU selection **after** the saved scene is loaded. It uses the existing camera/simulation mapping and frame renderer. It does not change the liquid simulation, save machine preferences, or weaken the physics validator. The wrapper alone does not establish that the scene passed validation.
+The [tools/render_gpu.py](tools/render_gpu.py) wrapper applies GPU selection **after** the saved scene is loaded. It uses the existing camera/simulation mapping and frame renderer. It does not change the liquid simulation, save machine preferences, or weaken the physics validator. The wrapper alone does not establish that the scene passed validation.
 
 Frame ranges are `[start,end)`. The intended image sequence is `00000.png` through `00527.png`. A bare `blender -a` does not reproduce the scripted film-camera/timeline mapping. Preserve a completed simulation checkpoint before running downstream validation.
 
@@ -44,10 +46,10 @@ The cup tipping is art-directed keyframe animation, not a rigid-body solve or tw
 
 ```sh
 npm test
-python -m unittest discover -s tests -p 'test_gpu_config.py' -v
+python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-The five Node tests check camera/timeline invariants. The six GPU configuration tests use mock devices; they do not prove a physical GPU render succeeded. After a real bake, `tools/validate_physics.py` checks physical events and writes the simulation report. After export, `tools/validate_cache.py` checks the shared liquid buffers and cup poses. Assembly checks native resolution, frame count, duration and frame rate; the handoff also specifies a strict FFmpeg decode and full visual/audio review.
+The five Node tests check camera/timeline invariants. The six GPU configuration tests use mock devices; they do not prove a physical GPU render succeeded. The 16 recovery tests use synthetic caches and temporary source fixtures; they do not establish that the wider-domain simulation passes. After a real bake, `tools/validate_physics.py` checks physical events and writes the simulation report. After export, `tools/validate_cache.py` checks the shared liquid buffers and cup poses. Assembly checks native resolution, frame count, duration and frame rate; the handoff also specifies a strict FFmpeg decode and full visual/audio review.
 
 ## Rights and provenance
 

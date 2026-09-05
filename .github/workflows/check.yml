@@ -14,7 +14,9 @@ jobs:
         with:
           node-version: '22'
       - run: npm test
-      - run: python -m compileall -q tools
+      - run: python -m compileall -q tools tests
+      - name: Test GPU configuration and isolated floor recovery
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
       - name: Archive canonical source
         run: git archive --format=zip HEAD -o sculpt-source.zip
       - uses: actions/upload-artifact@v4
